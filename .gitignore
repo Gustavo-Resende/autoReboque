@@ -1,21 +1,18 @@
-# Dependencies
-node_modules/
-vendor/
-venv/
-.venv/
-__pycache__/
+# Binários e saída de build
+bin/
+*.exe
+*.test
+*.out
 
-# Build
-dist/
-build/
-*.log
+# Uploads locais em desenvolvimento
+dados/
 
-# Env / secrets
+# Env / segredos
 .env
 .env.*
 !.env.example
 
-# IDE / OS
+# IDE / SO
 .vscode/
 .idea/
 .DS_Store

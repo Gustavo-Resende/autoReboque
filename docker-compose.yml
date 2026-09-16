@@ -1,0 +1,23 @@
+# Sobe apenas o Postgres. A aplicação roda no host com `go run ./cmd/server`.
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: autosocorro-db
+    environment:
+      POSTGRES_USER: autosocorro
+      POSTGRES_PASSWORD: autosocorro
+      POSTGRES_DB: autosocorro
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Scripts em docker-entrypoint-initdb.d rodam só na primeira criação do volume.
+      - ./docker/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U autosocorro -d autosocorro"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
