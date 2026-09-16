@@ -1,0 +1,230 @@
+{{define "conteudo"}}
+{{$os := .OS}}
+<div class="cabecalho-pagina">
+  <div>
+    <p class="mudo pequeno"><a href="{{if $os.EhOrcamento}}/orcamentos{{else}}/os{{end}}">‹ {{if $os.EhOrcamento}}Orçamentos{{else}}Ordens de serviço{{end}}</a></p>
+    <h1>{{if $os.EhOrcamento}}Orçamento{{else}}OS{{end}} {{$os.Numero}} <span class="badges-titulo">{{template "badge_status" $os.StatusExibido}}{{if not $os.EhOrcamento}} {{template "badge_pagamento" $os.Pagamento.Status}}{{end}}</span></h1>
+    <p class="mudo">Emitida em {{data $os.DataEmissao}}{{if $os.EhOrcamento}}{{if not $os.ValidoAte.IsZero}} · válida até {{data $os.ValidoAte}}{{end}}{{else if not $os.AprovadaEm.IsZero}} · aprovada em {{dataHora $os.AprovadaEm}}{{end}}{{if not $os.ConcluidaEm.IsZero}} · concluída em {{dataHora $os.ConcluidaEm}}{{end}}</p>
+  </div>
+  <div class="acoes-cabecalho">
+    <a class="botao" href="/os/{{$os.ID}}/editar"><svg><use href="#i-editar"/></svg> Editar</a>
+    <a class="botao" href="/os/{{$os.ID}}/imprimir" target="_blank" rel="noopener"><svg><use href="#i-imprimir"/></svg> Imprimir</a>
+    {{with .WhatsApp}}<a class="botao whatsapp" href="{{.}}" target="_blank" rel="noopener"><svg><use href="#i-whatsapp"/></svg> WhatsApp</a>{{end}}
+  </div>
+</div>
+
+{{template "os_painel" .}}
+
+<div class="grade-info">
+  <section class="cartao">
+    <h2>Cliente</h2>
+    <dl>
+      <dt>Nome</dt><dd>{{if eq $os.Cliente.ID 1}}{{$os.Cliente.Nome}}{{else}}<a href="/clientes/{{$os.Cliente.ID}}">{{or $os.Cliente.Nome "—"}}</a>{{end}}</dd>
+      {{with $os.Cliente.Documento}}<dt>CPF/CNPJ</dt><dd>{{.}}</dd>{{end}}
+      {{with $os.Cliente.Telefone}}<dt>Telefone</dt><dd><a href="tel:{{digitos .}}">{{.}}</a></dd>{{end}}
+      {{if or $os.Solicitante.Nome $os.Solicitante.Telefone}}
+      <dt>Solicitante</dt><dd>{{$os.Solicitante.Nome}}{{if and $os.Solicitante.Nome $os.Solicitante.Telefone}} · {{end}}{{$os.Solicitante.Telefone}}</dd>
+      {{end}}
+    </dl>
+  </section>
+  <section class="cartao">
+    <h2>Veículo</h2>
+    {{with $os.Veiculo}}
+    {{if or .Categoria .Modelo .Ano .Cor .Placa .Condicao}}
+    <dl>
+      {{with .Categoria}}<dt>Categoria</dt><dd>{{.Rotulo}}</dd>{{end}}
+      {{with .Modelo}}<dt>Modelo</dt><dd>{{.}}</dd>{{end}}
+      {{with .Placa}}<dt>Placa</dt><dd><span class="placa">{{.}}</span></dd>{{end}}
+      {{with .Ano}}<dt>Ano</dt><dd>{{.}}</dd>{{end}}
+      {{with .Cor}}<dt>Cor</dt><dd>{{.}}</dd>{{end}}
+      {{with .Condicao}}<dt>Condição</dt><dd>{{.}}</dd>{{end}}
+    </dl>
+    {{else}}<p class="mudo">Não informado.</p>{{end}}
+    {{end}}
+  </section>
+  <section class="cartao">
+    <h2>Trajeto</h2>
+    {{with $os.Trajeto}}
+    {{if or .Origem .Referencia .Destino .Km}}
+    <dl>
+      {{with .Origem}}<dt>Origem</dt><dd>{{.}}</dd>{{end}}
+      {{with .Referencia}}<dt>Referência</dt><dd>{{.}}</dd>{{end}}
+      {{with .Destino}}<dt>Destino</dt><dd>{{.}}</dd>{{end}}
+      {{with .Km}}<dt>Distância</dt><dd>{{.}} km</dd>{{end}}
+    </dl>
+    {{else}}<p class="mudo">Não informado.</p>{{end}}
+    {{end}}
+  </section>
+  <section class="cartao">
+    <h2>Atendimento</h2>
+    <dl>
+      {{if not $os.AcionadoEm.IsZero}}<dt>Acionado em</dt><dd>{{dataHora $os.AcionadoEm}}</dd>{{end}}
+      {{if not $os.AgendadaPara.IsZero}}<dt>Agendado para</dt><dd>{{dataHora $os.AgendadaPara}}</dd>{{end}}
+      <dt>Motorista</dt><dd>{{or $os.Motorista.Nome "—"}}</dd>
+      {{with $os.Guincho}}<dt>Guincho</dt><dd>{{.}}</dd>{{end}}
+      {{with $os.RecebidoPor}}<dt>Recebido por</dt><dd>{{.}}</dd>{{end}}
+      <dt>Observações</dt><dd class="preservar">{{or $os.Observacoes "—"}}</dd>
+    </dl>
+  </section>
+</div>
+
+<section class="cartao">
+  <h2>Serviços e valores</h2>
+  {{if $os.Itens}}
+  <div class="tabela-rolavel">
+  <table class="tabela-itens somente-leitura">
+    <thead><tr><th>Descrição</th><th class="num">Qtd</th><th class="num">Unitário</th><th class="num">Total</th></tr></thead>
+    <tbody>
+      {{range $os.Itens}}
+      <tr>
+        <td data-rotulo="Descrição">{{.Descricao}}</td>
+        <td data-rotulo="Qtd" class="num">{{qtd .QuantidadeCentesimos}} {{.RotuloUnidade}}</td>
+        <td data-rotulo="Unitário" class="num">{{reais .ValorUnitarioCentavos}}</td>
+        <td data-rotulo="Total" class="num">{{reais .Subtotal}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+    <tfoot>
+      {{if $os.DescontoCentavos}}
+      <tr><td colspan="3" class="num rotulo-rodape">Subtotal</td><td class="num">{{reais $os.Subtotal}}</td></tr>
+      <tr><td colspan="3" class="num rotulo-rodape">Desconto</td><td class="num">-{{reais $os.DescontoCentavos}}</td></tr>
+      {{end}}
+      <tr class="linha-total"><td colspan="3" class="num rotulo-rodape">Total</td><td class="num total">{{reais $os.Total}}</td></tr>
+    </tfoot>
+  </table>
+  </div>
+  {{else}}
+  <p class="mudo">Nenhum item. <a href="/os/{{$os.ID}}/editar">Adicionar serviços</a>.</p>
+  {{end}}
+</section>
+
+{{template "os_imagens" (dict "OSID" $os.ID "Imagens" .Imagens "Etapas" .Etapas "Erro" "")}}
+{{end}}
+
+
+{{/* Painel de andamento e pagamento. Re-renderizado pelo HTMX a cada ação.
+     Cada formulário carrega a versão atual da OS: é ela que o servidor
+     confere para recusar uma ação feita em cima de dados velhos. */}}
+{{define "os_painel"}}
+{{$os := .OS}}
+<div id="os-painel" class="painel">
+  {{if .Conflito}}
+  <div class="alerta erro" role="alert">
+    <strong>Esta OS foi alterada por outra pessoa.</strong>
+    Os dados abaixo já são os atualizados; confira antes de repetir a ação.
+    <a href="/os/{{$os.ID}}">Recarregar a página</a>
+  </div>
+  {{end}}
+  {{with .Erro}}<div class="alerta erro" role="alert">{{.}}</div>{{end}}
+
+  <section class="cartao">
+    <h2>{{if $os.EhOrcamento}}Andamento do orçamento{{else}}Andamento do serviço{{end}}</h2>
+    <p class="status-atual">
+      {{template "badge_status" $os.StatusExibido}}
+      {{if $os.EhOrcamento}}
+        {{if $os.Expirado}}<span class="mudo">venceu em {{data $os.ValidoAte}}</span>
+        {{else if not $os.ValidoAte.IsZero}}<span class="mudo">válido até {{data $os.ValidoAte}}</span>{{end}}
+      {{else if and (eq $os.Status "AGENDADA") (not $os.AgendadaPara.IsZero)}}<span class="mudo">para {{dataHora $os.AgendadaPara}}</span>{{end}}
+    </p>
+    {{if $os.Acoes}}
+    <div class="botoes-status">
+      {{range $os.Acoes}}
+      <form method="post" action="/os/{{$os.ID}}/status" hx-post="/os/{{$os.ID}}/status" hx-target="#os-painel" hx-swap="outerHTML"
+            {{if .Destrutiva}}hx-confirm="{{.RotuloAcao $os.StatusExibido}}? O número não será reaproveitado."{{end}}>
+        <input type="hidden" name="versao" value="{{$os.Versao}}">
+        <input type="hidden" name="status" value="{{.}}">
+        {{if eq . "AGENDADA"}}
+        <label class="agendar">
+          <span>Para quando?</span>
+          <input type="datetime-local" name="agendada_para" required value="{{dataHoraInput $os.AgendadaPara}}">
+        </label>
+        {{end}}
+        <button type="submit" class="botao {{if .Destrutiva}}perigo{{else if eq . "EM_ANDAMENTO" "CONCLUIDA"}}primario{{end}}">{{.RotuloAcao $os.StatusExibido}}</button>
+      </form>
+      {{end}}
+    </div>
+    {{end}}
+    {{if $os.EhOrcamento}}
+    <p class="mudo pequeno dica">Aprovar transforma este orçamento na OS <strong>{{$os.Numero}}</strong> — mesmo número, mesmo registro.</p>
+    {{end}}
+  </section>
+
+  {{if not $os.EhOrcamento}}
+  <section class="cartao">
+    <h2>Pagamento</h2>
+    <p class="status-atual">
+      {{template "badge_pagamento" $os.Pagamento.Status}}
+      <span class="mudo">{{reais $os.Pagamento.ValorCentavos}} de {{reais $os.Total}}{{if $os.Pagamento.Forma}} · {{$os.Pagamento.Forma.Rotulo}}{{end}}{{if not $os.Pagamento.Vencimento.IsZero}} · vence {{data $os.Pagamento.Vencimento}}{{end}}</span>
+    </p>
+    <form method="post" action="/os/{{$os.ID}}/pagamento" hx-post="/os/{{$os.ID}}/pagamento" hx-target="#os-painel" hx-swap="outerHTML" class="form-pagamento">
+      <input type="hidden" name="versao" value="{{$os.Versao}}">
+      <div class="grade-campos-4">
+        <div>
+          <label for="status_pagamento">Situação</label>
+          <select id="status_pagamento" name="status_pagamento">
+            {{range .StatusPagamento}}<option value="{{.}}" {{if eq . $os.Pagamento.Status}}selected{{end}}>{{.Rotulo}}</option>{{end}}
+          </select>
+        </div>
+        <div>
+          <label for="valor_pago">Valor pago (R$)</label>
+          <input id="valor_pago" name="valor_pago" value="{{valor $os.Pagamento.ValorCentavos}}" inputmode="decimal" class="num">
+        </div>
+        <div>
+          <label for="forma_pagamento">Forma</label>
+          <select id="forma_pagamento" name="forma_pagamento" onchange="document.getElementById('campo-vencimento').hidden = this.value !== 'FATURADO'">
+            <option value="">—</option>
+            {{range .Formas}}<option value="{{.}}" {{if eq . $os.Pagamento.Forma}}selected{{end}}>{{.Rotulo}}</option>{{end}}
+          </select>
+        </div>
+        <div id="campo-vencimento" {{if ne $os.Pagamento.Forma "FATURADO"}}hidden{{end}}>
+          <label for="vencimento">Vencimento</label>
+          <input id="vencimento" name="vencimento" type="date" value="{{dataInput $os.Pagamento.Vencimento}}">
+        </div>
+      </div>
+      <button type="submit" class="botao">Registrar pagamento</button>
+    </form>
+  </section>
+  {{end}}
+</div>
+{{end}}
+
+
+{{/* Bloco de fotos. Recebe OSID, Imagens, Etapas e Erro. */}}
+{{define "os_imagens"}}
+<section id="os-imagens" class="cartao">
+  <div class="cartao-cabecalho">
+    <h2>Fotos</h2>
+    <form method="post" action="/os/{{.OSID}}/imagens" enctype="multipart/form-data" class="enviar-fotos"
+          hx-post="/os/{{.OSID}}/imagens" hx-encoding="multipart/form-data" hx-target="#os-imagens" hx-swap="outerHTML" hx-indicator="#os-imagens">
+      <select name="etapa" aria-label="Etapa das fotos">
+        {{range .Etapas}}<option value="{{.}}">{{.Rotulo}}</option>{{end}}
+      </select>
+      <label for="fotos" class="botao"><svg><use href="#i-camera"/></svg> Anexar</label>
+      <input id="fotos" name="fotos" type="file" accept="image/jpeg,image/png,image/webp" multiple class="oculto-visual" onchange="this.form.requestSubmit()">
+      <noscript><button type="submit" class="botao">Enviar</button></noscript>
+    </form>
+  </div>
+  {{with .Erro}}<div class="alerta erro" role="alert">{{.}}</div>{{end}}
+  {{if .Imagens}}
+  <div class="galeria">
+    {{range .Imagens}}
+    <figure>
+      <a href="/imagens/{{.ID}}" target="_blank" rel="noopener"><img src="/imagens/{{.ID}}/miniatura" alt="{{.NomeOriginal}}" loading="lazy"></a>
+      <figcaption>
+        <form method="post" action="/os/{{$.OSID}}/imagens/{{.ID}}/etapa" hx-post="/os/{{$.OSID}}/imagens/{{.ID}}/etapa" hx-target="#os-imagens" hx-swap="outerHTML" hx-trigger="change">
+          <select name="etapa" aria-label="Etapa" class="mini">
+            {{$atual := .Etapa}}{{range $.Etapas}}<option value="{{.}}" {{if eq . $atual}}selected{{end}}>{{.Rotulo}}</option>{{end}}
+          </select>
+        </form>
+        <form method="post" action="/os/{{$.OSID}}/imagens/{{.ID}}/remover" hx-post="/os/{{$.OSID}}/imagens/{{.ID}}/remover" hx-target="#os-imagens" hx-swap="outerHTML" hx-confirm="Remover esta foto?">
+          <button type="submit" class="link perigo" title="Remover"><svg><use href="#i-x"/></svg></button>
+        </form>
+      </figcaption>
+    </figure>
+    {{end}}
+  </div>
+  {{else}}
+  <p class="mudo">Nenhuma foto. Registre o estado do veículo na retirada e na entrega.</p>
+  {{end}}
+</section>
+{{end}}

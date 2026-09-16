@@ -1,0 +1,5 @@
+{{/* Etiquetas de status. A classe muda o tom, mas o texto sempre diz o status:
+     nada aqui depende de cor para ser entendido (impressão em preto e branco). */}}
+{{define "badge_status"}}<span class="badge st-{{.}}">{{.Rotulo}}</span>{{end}}
+{{define "badge_pagamento"}}<span class="badge pg-{{.}}">{{.Rotulo}}</span>{{end}}
+{{define "badge_ativo"}}{{if .}}<span class="badge pg-PAGA">Ativo</span>{{else}}<span class="badge st-CANCELADA">Inativo</span>{{end}}{{end}}

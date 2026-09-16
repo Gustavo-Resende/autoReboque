@@ -1,0 +1,63 @@
+{{define "conteudo"}}
+{{$c := .Cliente}}
+<div class="cabecalho-pagina">
+  <div>
+    <p class="mudo pequeno"><a href="/clientes">‹ Clientes</a></p>
+    <h1>{{$c.Nome}} <span class="badges-titulo">{{template "badge_ativo" $c.Ativo}}</span></h1>
+    <p class="mudo">{{$c.Tipo.Rotulo}} · {{$c.Categoria.Rotulo}}{{if $c.Sistema}} · cliente padrão do sistema{{end}}</p>
+  </div>
+  <div class="acoes-cabecalho">
+    <a class="botao primario" href="/os/nova?cliente={{$c.ID}}"><svg><use href="#i-mais"/></svg> Novo orçamento</a>
+    {{if not $c.Sistema}}
+    <a class="botao" href="/clientes/{{$c.ID}}/editar"><svg><use href="#i-editar"/></svg> Editar</a>
+    {{if $c.Telefone}}<a class="botao whatsapp" href="https://wa.me/55{{digitos $c.Telefone}}" target="_blank" rel="noopener"><svg><use href="#i-whatsapp"/></svg> WhatsApp</a>{{end}}
+    {{end}}
+  </div>
+</div>
+
+<div class="grade-1-2">
+  <section class="cartao">
+    <h2>Dados</h2>
+    <dl>
+      {{with $c.Documento}}<dt>{{$c.Tipo.RotuloDocumento}}</dt><dd>{{.}}</dd>{{end}}
+      {{with $c.Telefone}}<dt>Telefone</dt><dd><a href="tel:{{digitos .}}">{{.}}</a></dd>{{end}}
+      {{with $c.Email}}<dt>E-mail</dt><dd><a href="mailto:{{.}}">{{.}}</a></dd>{{end}}
+      {{with $c.Endereco}}<dt>Endereço</dt><dd>{{.}}</dd>{{end}}
+      {{with $c.Cidade}}<dt>Cidade</dt><dd>{{.}}</dd>{{end}}
+      {{with $c.Observacoes}}<dt>Observações</dt><dd class="preservar">{{.}}</dd>{{end}}
+      <dt>Cadastro</dt><dd>{{data $c.CriadoEm}}</dd>
+    </dl>
+    {{if not $c.Sistema}}
+    <form method="post" action="/clientes/{{$c.ID}}/ativo" class="acoes" {{if $c.Ativo}}onsubmit="return confirm('Desativar este cliente? Ele some das buscas, mas o histórico continua.')"{{end}}>
+      <input type="hidden" name="ativo" value="{{if $c.Ativo}}0{{else}}1{{end}}">
+      <button type="submit" class="botao {{if $c.Ativo}}perigo{{end}}">{{if $c.Ativo}}Desativar cliente{{else}}Reativar cliente{{end}}</button>
+    </form>
+    {{end}}
+  </section>
+
+  <section class="cartao">
+    <div class="cartao-cabecalho">
+      <h2>Histórico</h2>
+      <span class="mudo pequeno">{{.Historico.Resumo.Quantidade}} registro{{if ne .Historico.Resumo.Quantidade 1}}s{{end}} · {{reais .Historico.Resumo.TotalCentavos}}</span>
+    </div>
+    {{if .Historico.Linhas}}
+    <ul class="lista-compacta">
+      {{range .Historico.Linhas}}
+      <li class="cartao-link" data-href="/os/{{.ID}}">
+        <div>
+          <a href="/os/{{.ID}}" class="numero">{{.Numero}}</a>
+          <span class="mudo">{{data .DataEmissao}}{{if .VeiculoModelo}} · {{.VeiculoModelo}}{{end}}{{if .VeiculoPlaca}} {{.VeiculoPlaca}}{{end}}</span>
+        </div>
+        <div class="direita">
+          <strong>{{reais .TotalCentavos}}</strong>
+          <span class="badges">{{template "badge_status" .Status}}{{if not .EhOrcamento}} {{template "badge_pagamento" .StatusPagamento}}{{end}}</span>
+        </div>
+      </li>
+      {{end}}
+    </ul>
+    {{else}}
+    <p class="mudo">Nenhum orçamento ou OS para este cliente ainda.</p>
+    {{end}}
+  </section>
+</div>
+{{end}}

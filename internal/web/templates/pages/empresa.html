@@ -1,0 +1,87 @@
+{{define "conteudo"}}
+{{$e := .Form}}
+<div class="cabecalho-pagina">
+  <div>
+    <h1>Empresa</h1>
+    <p class="mudo">Identidade e dados que aparecem no sistema e no cabeçalho dos documentos impressos.</p>
+  </div>
+</div>
+{{with .Erro}}<div class="alerta erro" role="alert">{{.}}</div>{{end}}
+
+<div class="grade-2-1">
+  <form method="post" action="/empresa" autocomplete="off">
+    <section class="cartao">
+      <h2>Identidade</h2>
+      <div class="grade-campos-3">
+        <div class="col-2"><label for="nome_fantasia">Nome fantasia (como aparece no sistema)</label><input id="nome_fantasia" name="nome_fantasia" value="{{$e.NomeFantasia}}"></div>
+        <div>
+          <label for="cor_primaria">Cor da marca</label>
+          <div class="campo-cor">
+            <input type="color" id="cor_primaria_seletor" value="{{$e.CorPrimaria}}" oninput="document.getElementById('cor_primaria').value = this.value.toUpperCase()" aria-label="Escolher cor">
+            <input id="cor_primaria" name="cor_primaria" value="{{$e.CorPrimaria}}" pattern="#[0-9a-fA-F]{6}" placeholder="#F4511E" oninput="if (/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('cor_primaria_seletor').value = this.value">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cartao">
+      <h2>Dados fiscais</h2>
+      <div class="grade-campos-3">
+        <div class="col-2"><label for="razao_social">Razão social</label><input id="razao_social" name="razao_social" value="{{$e.RazaoSocial}}"></div>
+        <div><label for="cnpj">CNPJ</label><input id="cnpj" name="cnpj" value="{{$e.CNPJ}}" inputmode="numeric"></div>
+        <div class="col-2"><label for="endereco">Endereço</label><input id="endereco" name="endereco" value="{{$e.Endereco}}"></div>
+        <div><label for="cidade">Cidade / UF</label><input id="cidade" name="cidade" value="{{$e.Cidade}}"></div>
+      </div>
+    </section>
+
+    <section class="cartao">
+      <h2>Contato</h2>
+      <div class="grade-campos-3">
+        <div><label for="telefone">Telefone</label><input id="telefone" name="telefone" value="{{$e.Telefone}}" inputmode="tel"></div>
+        <div><label for="whatsapp">WhatsApp</label><input id="whatsapp" name="whatsapp" value="{{$e.WhatsApp}}" inputmode="tel"></div>
+        <div><label for="email">E-mail</label><input id="email" name="email" value="{{$e.Email}}" inputmode="email"></div>
+      </div>
+    </section>
+
+    <section class="cartao">
+      <h2>Orçamentos</h2>
+      <div class="grade-campos-3">
+        <div><label for="orcamento_validade_dias">Validade padrão (dias)</label><input id="orcamento_validade_dias" name="orcamento_validade_dias" value="{{$e.OrcamentoValidadeDias}}" inputmode="numeric" class="num" min="1" max="365" type="number"></div>
+        <div class="col-3">
+          <label for="orcamento_condicoes">Condições impressas no rodapé do orçamento</label>
+          <textarea id="orcamento_condicoes" name="orcamento_condicoes" rows="3">{{$e.OrcamentoCondicoes}}</textarea>
+        </div>
+      </div>
+    </section>
+
+    <div class="acoes">
+      <button type="submit" class="botao primario grande">Salvar</button>
+    </div>
+  </form>
+
+  <section class="cartao">
+    <h2>Logo</h2>
+    {{if $e.TemLogo}}
+      <div class="logo-previa"><img src="/empresa/logo?v={{$e.AtualizadaEm.Unix}}" alt="Logo atual"></div>
+      <form method="post" action="/empresa/logo/remover" onsubmit="return confirm('Remover o logo?')" class="acoes">
+        <button type="submit" class="botao perigo pequeno">Remover logo</button>
+      </form>
+    {{else}}
+      <p class="mudo">Nenhum logo enviado. Sem logo, o nome fantasia aparece no lugar.</p>
+    {{end}}
+    <form method="post" action="/empresa/logo" enctype="multipart/form-data">
+      <label for="logo" class="botao"><svg><use href="#i-camera"/></svg> Enviar logo</label>
+      <input id="logo" name="logo" type="file" accept="image/jpeg,image/png,image/webp" class="oculto-visual" onchange="this.form.requestSubmit()">
+    </form>
+    <div class="especificacao">
+      <strong>Como o logo deve ser</strong>
+      <ul>
+        <li><strong>Horizontal ou quadrado</strong> — ele fica no canto superior do documento e no menu. Proporção entre 1:1 e 4:1 (largura maior ou igual à altura); logos altos e estreitos ficam pequenos.</li>
+        <li>PNG com fundo transparente é o ideal; JPG e WebP também servem.</li>
+        <li>Mínimo de 600 px de largura para imprimir nítido; até 2 MB.</li>
+        <li>Ele é impresso em preto e branco também — confira se continua legível sem cor.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+{{end}}

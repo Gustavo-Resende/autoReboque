@@ -1,0 +1,54 @@
+{{define "conteudo"}}
+{{$f := .Form}}
+<div class="cabecalho-pagina">
+  <div>
+    <h1>Motoristas</h1>
+    <p class="mudo">Quem dirige o guincho. Só nome e telefone — comissões e rotas ficam para depois.</p>
+  </div>
+</div>
+
+<div class="grade-2-1 inverter-movel">
+  <section class="cartao">
+    <h2>Equipe</h2>
+    {{if .Motoristas}}
+    <div class="tabela-rolavel">
+    <table class="tabela-os">
+      <thead><tr><th>Nome</th><th>Telefone</th><th>Situação</th><th></th></tr></thead>
+      <tbody>
+        {{range .Motoristas}}
+        <tr class="{{if not .Ativo}}inativo{{end}}">
+          <td data-rotulo="Nome"><strong>{{.Nome}}</strong></td>
+          <td data-rotulo="Telefone">{{or .Telefone "—"}}</td>
+          <td data-rotulo="Situação">{{template "badge_ativo" .Ativo}}</td>
+          <td class="acoes-celula">
+            <a class="botao pequeno" href="/motoristas/{{.ID}}/editar">Editar</a>
+            <form method="post" action="/motoristas/{{.ID}}/ativo"><input type="hidden" name="ativo" value="{{if .Ativo}}0{{else}}1{{end}}"><button type="submit" class="botao pequeno">{{if .Ativo}}Desativar{{else}}Reativar{{end}}</button></form>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+    </div>
+    {{else}}<p class="mudo">Nenhum motorista cadastrado.</p>{{end}}
+  </section>
+
+  <section class="cartao">
+    <h2>{{if $f.ID}}Editar motorista{{else}}Novo motorista{{end}}</h2>
+    {{with .Erro}}<div class="alerta erro" role="alert">{{.}}</div>{{end}}
+    <form method="post" action="{{if $f.ID}}/motoristas/{{$f.ID}}{{else}}/motoristas{{end}}" autocomplete="off">
+      <label for="nome">Nome *</label>
+      <input id="nome" name="nome" value="{{$f.Nome}}" required {{if $f.ID}}autofocus{{end}}>
+      <label for="telefone">Telefone</label>
+      <input id="telefone" name="telefone" value="{{$f.Telefone}}" inputmode="tel">
+      {{if $f.ID}}
+      <label for="ativo">Situação</label>
+      <select id="ativo" name="ativo"><option value="1" {{if $f.Ativo}}selected{{end}}>Ativo</option><option value="0" {{if not $f.Ativo}}selected{{end}}>Inativo</option></select>
+      {{end}}
+      <div class="acoes">
+        <button type="submit" class="botao primario">{{if $f.ID}}Salvar{{else}}Adicionar{{end}}</button>
+        {{if $f.ID}}<a class="botao" href="/motoristas">Cancelar</a>{{end}}
+      </div>
+    </form>
+  </section>
+</div>
+{{end}}

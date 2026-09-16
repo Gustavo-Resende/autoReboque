@@ -1,0 +1,68 @@
+{{define "conteudo"}}
+{{$f := .Form}}
+<div class="cabecalho-pagina">
+  <div>
+    <h1>Serviços</h1>
+    <p class="mudo">O catálogo do que a empresa cobra. Na OS, cada serviço entra com o preço padrão, que pode ser ajustado na hora.</p>
+  </div>
+</div>
+
+<div class="grade-2-1 inverter-movel">
+  <section class="cartao">
+    <h2>Catálogo</h2>
+    {{if .Servicos}}
+    <div class="tabela-rolavel">
+    <table class="tabela-os tabela-servicos">
+      <thead><tr><th>Serviço</th><th>Unidade</th><th class="num">Preço padrão</th><th>Situação</th><th></th></tr></thead>
+      <tbody>
+        {{range .Servicos}}
+        <tr class="{{if not .Ativo}}inativo{{end}}">
+          <td data-rotulo="Serviço"><strong>{{.Nome}}</strong>{{if .QuantidadeDoKm}} <span class="mudo pequeno">· qtd = km do trajeto</span>{{end}}</td>
+          <td data-rotulo="Unidade">{{.Unidade.Rotulo}}</td>
+          <td data-rotulo="Preço" class="num">{{reais .PrecoCentavos}}</td>
+          <td data-rotulo="Situação">{{template "badge_ativo" .Ativo}}</td>
+          <td class="acoes-celula">
+            <a class="botao pequeno" href="/servicos/{{.ID}}/editar">Editar</a>
+            <form method="post" action="/servicos/{{.ID}}/ativo"><input type="hidden" name="ativo" value="{{if .Ativo}}0{{else}}1{{end}}"><button type="submit" class="botao pequeno">{{if .Ativo}}Desativar{{else}}Reativar{{end}}</button></form>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+    </div>
+    {{else}}<p class="mudo">Nenhum serviço cadastrado.</p>{{end}}
+  </section>
+
+  <section class="cartao" id="form-servico">
+    <h2>{{if $f.ID}}Editar serviço{{else}}Novo serviço{{end}}</h2>
+    {{with .Erro}}<div class="alerta erro" role="alert">{{.}}</div>{{end}}
+    <form method="post" action="{{if $f.ID}}/servicos/{{$f.ID}}{{else}}/servicos{{end}}" autocomplete="off">
+      <label for="nome">Nome *</label>
+      <input id="nome" name="nome" value="{{$f.Nome}}" required {{if $f.ID}}autofocus{{end}}>
+      <div class="grade-campos-2">
+        <div>
+          <label for="unidade">Cobrado por</label>
+          <select id="unidade" name="unidade" onchange="document.getElementById('campo-km').hidden = this.value !== 'KM'">
+            {{range .Unidades}}<option value="{{.}}" {{if eq . $f.Unidade}}selected{{end}}>{{.Rotulo}}</option>{{end}}
+          </select>
+        </div>
+        <div><label for="preco">Preço padrão (R$)</label><input id="preco" name="preco" value="{{if $f.ID}}{{valor $f.PrecoCentavos}}{{end}}" inputmode="decimal" class="num" placeholder="0,00"></div>
+      </div>
+      <label class="caixa" id="campo-km" {{if ne $f.Unidade "KM"}}hidden{{end}}><input type="checkbox" name="quantidade_do_km" value="1" {{if $f.QuantidadeDoKm}}checked{{end}}> A quantidade vem do km do trajeto da OS</label>
+      <div class="grade-campos-2">
+        <div><label for="ordem">Ordem na lista</label><input id="ordem" name="ordem" value="{{if $f.Ordem}}{{$f.Ordem}}{{end}}" inputmode="numeric" class="num" placeholder="auto"></div>
+        {{if $f.ID}}
+        <div>
+          <label for="ativo">Situação</label>
+          <select id="ativo" name="ativo"><option value="1" {{if $f.Ativo}}selected{{end}}>Ativo</option><option value="0" {{if not $f.Ativo}}selected{{end}}>Inativo</option></select>
+        </div>
+        {{end}}
+      </div>
+      <div class="acoes">
+        <button type="submit" class="botao primario">{{if $f.ID}}Salvar{{else}}Adicionar{{end}}</button>
+        {{if $f.ID}}<a class="botao" href="/servicos">Cancelar</a>{{end}}
+      </div>
+    </form>
+  </section>
+</div>
+{{end}}

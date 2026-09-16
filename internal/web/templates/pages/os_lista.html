@@ -1,0 +1,102 @@
+{{define "conteudo"}}
+{{$orc := eq .Fase "ORCAMENTO"}}
+<div class="cabecalho-pagina">
+  <div>
+    <h1>{{if $orc}}Orçamentos{{else}}Ordens de serviço{{end}}</h1>
+    <p class="mudo">{{if $orc}}Rascunhos aguardando resposta do cliente. Ao aprovar, viram ordem de serviço com o mesmo número.{{else}}Serviços aprovados: agendados, em andamento e concluídos.{{end}}</p>
+  </div>
+  <a class="botao primario" href="/os/nova"><svg><use href="#i-mais"/></svg> Novo orçamento</a>
+</div>
+
+{{/* Abas por status. São links normais: trocar de aba recarrega a página e
+     mantém o campo escondido "status" do formulário de filtros em dia. */}}
+<nav class="abas" aria-label="Status">
+  <a href="{{.Caminho}}" class="{{if not .Filtro.Status}}ativa{{end}}">Todas <span class="contador">{{.TotalFase}}</span></a>
+  {{range .Abas}}
+  <a href="{{$.Caminho}}?status={{.}}" class="{{if eq $.Filtro.Status .}}ativa{{end}}">{{.Rotulo}} <span class="contador">{{index $.Contagem .}}</span></a>
+  {{end}}
+</nav>
+
+{{/* Busca e filtro de pagamento atualizam só a tabela via HTMX. */}}
+<form class="filtros" method="get" action="{{.Caminho}}"
+      hx-get="{{.Caminho}}" hx-target="#lista" hx-trigger="submit, input changed delay:300ms" hx-indicator="#lista">
+  <input type="hidden" name="status" value="{{.Filtro.Status}}">
+  <label class="campo-busca">
+    <svg><use href="#i-busca"/></svg>
+    <input type="search" name="q" value="{{.Filtro.Busca}}" placeholder="Número, cliente, placa ou modelo" aria-label="Buscar">
+  </label>
+  {{if not $orc}}
+  <select name="pagamento" aria-label="Pagamento">
+    <option value="">Pagamento: todos</option>
+    {{range .StatusPagamento}}
+    <option value="{{.}}" {{if eq $.Filtro.StatusPagamento .}}selected{{end}}>{{.Rotulo}}</option>
+    {{end}}
+  </select>
+  {{end}}
+  <noscript><button type="submit" class="botao">Filtrar</button></noscript>
+</form>
+
+<div id="lista">
+  {{template "os_lista_tabela" .}}
+</div>
+{{end}}
+
+{{define "os_lista_tabela"}}
+{{$orc := eq .Fase "ORCAMENTO"}}
+<div class="resumo">
+  <div><span>{{if $orc}}Orçamentos{{else}}OS{{end}}</span><strong>{{.Lista.Resumo.Quantidade}}</strong></div>
+  <div><span>{{if $orc}}Valor potencial{{else}}Total{{end}}</span><strong>{{reais .Lista.Resumo.TotalCentavos}}</strong></div>
+  {{if not $orc}}
+  <div><span>Recebido</span><strong>{{reais .Lista.Resumo.PagoCentavos}}</strong></div>
+  <div><span>Em aberto</span><strong>{{reais .Lista.Resumo.SaldoCentavos}}</strong></div>
+  {{end}}
+</div>
+
+{{if .Lista.Linhas}}
+<div class="tabela-rolavel">
+<table class="tabela-os">
+  <thead>
+    <tr>
+      <th>Nº</th>
+      <th>Data</th>
+      <th>Cliente</th>
+      <th>Veículo</th>
+      {{if $orc}}<th>Validade</th>{{else}}<th>Motorista</th>{{end}}
+      <th>Status</th>
+      {{if not $orc}}<th>Pagamento</th>{{end}}
+      <th class="num">Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{range .Lista.Linhas}}
+    <tr data-href="/os/{{.ID}}">
+      <td data-rotulo="Nº"><a href="/os/{{.ID}}" class="numero">{{.Numero}}</a></td>
+      <td data-rotulo="Data">{{data .DataEmissao}}</td>
+      <td data-rotulo="Cliente">{{or .ClienteNome "—"}}</td>
+      <td data-rotulo="Veículo">{{.VeiculoModelo}}{{if .VeiculoPlaca}} <span class="placa">{{.VeiculoPlaca}}</span>{{end}}{{if and (not .VeiculoModelo) (not .VeiculoPlaca)}}—{{end}}</td>
+      {{if $orc}}<td data-rotulo="Validade">{{if .ValidoAte.IsZero}}—{{else}}{{data .ValidoAte}}{{end}}</td>
+      {{else}}<td data-rotulo="Motorista">{{or .MotoristaNome "—"}}</td>{{end}}
+      <td data-rotulo="Status">{{template "badge_status" .Status}}{{if and (eq .Status "AGENDADA") (not .AgendadaPara.IsZero)}} <span class="mudo pequeno">{{dataHora .AgendadaPara}}</span>{{end}}</td>
+      {{if not $orc}}<td data-rotulo="Pagamento">{{template "badge_pagamento" .StatusPagamento}}</td>{{end}}
+      <td data-rotulo="Total" class="num">{{reais .TotalCentavos}}</td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+</div>
+
+{{if gt .Lista.TotalPaginas 1}}
+<nav class="paginacao" hx-target="#lista" hx-indicator="#lista">
+  {{if .Lista.TemAnterior}}<a class="botao" href="{{call .URLPagina (dec .Lista.Pagina)}}" hx-get="{{call .URLPagina (dec .Lista.Pagina)}}">‹ Anterior</a>{{end}}
+  <span class="mudo">Página {{.Lista.Pagina}} de {{.Lista.TotalPaginas}}</span>
+  {{if .Lista.TemProxima}}<a class="botao" href="{{call .URLPagina (inc .Lista.Pagina)}}" hx-get="{{call .URLPagina (inc .Lista.Pagina)}}">Próxima ›</a>{{end}}
+</nav>
+{{end}}
+{{else}}
+<div class="vazio">
+  <svg><use href="#i-os"/></svg>
+  <p>Nenhum registro{{if or .Filtro.Busca .Filtro.Status .Filtro.StatusPagamento}} com esses filtros{{end}}.</p>
+  <a class="botao primario" href="/os/nova">Criar orçamento</a>
+</div>
+{{end}}
+{{end}}

@@ -1,0 +1,152 @@
+{{/* Página de impressão da OS / orçamento. Uma folha A4, três seções: cabeçalho,
+     corpo, rodapé. Campo vazio não aparece: cada bloco só é escrito se tiver
+     conteúdo. Preto e branco por natureza: nenhuma informação depende de cor. */}}
+{{define "impressao"}}<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{.OS.Titulo}} {{.OS.Numero}}</title>
+  <link rel="stylesheet" href="/static/print.css">
+</head>
+<body>
+{{$os := .OS}}{{$orc := $os.EhOrcamento}}
+<div class="barra-tela">
+  <a href="/os/{{$os.ID}}">‹ Voltar</a>
+  <span>Use <strong>Salvar como PDF</strong> na caixa de impressão para enviar por WhatsApp.</span>
+  <button type="button" onclick="window.print()">Imprimir</button>
+</div>
+
+<article class="folha">
+
+  {{/* ---------- 1. CABEÇALHO ---------- */}}
+  <header class="cabecalho">
+    <div class="empresa">
+      {{if .Empresa.TemLogo}}<img class="logo" src="/empresa/logo?v={{.Empresa.AtualizadaEm.Unix}}" alt="">{{end}}
+      <div class="empresa-dados">
+        <div class="razao">{{or .Empresa.RazaoSocial .Empresa.NomeFantasia}}</div>
+        {{with .Empresa.CNPJ}}<div>CNPJ {{.}}</div>{{end}}
+        {{if or .Empresa.Endereco .Empresa.Cidade}}<div>{{.Empresa.Endereco}}{{if and .Empresa.Endereco .Empresa.Cidade}} · {{end}}{{.Empresa.Cidade}}</div>{{end}}
+        {{if or .Empresa.Telefone .Empresa.WhatsApp .Empresa.Email}}
+        <div>{{.Empresa.Telefone}}{{if and .Empresa.Telefone .Empresa.WhatsApp (ne .Empresa.Telefone .Empresa.WhatsApp)}} · WhatsApp {{.Empresa.WhatsApp}}{{end}}{{if and (or .Empresa.Telefone .Empresa.WhatsApp) .Empresa.Email}} · {{end}}{{.Empresa.Email}}</div>
+        {{end}}
+      </div>
+    </div>
+    <div class="documento">
+      <div class="titulo">{{$os.Titulo}}</div>
+      <div class="numero">Nº {{$os.Numero}}</div>
+      <div class="meta">Emissão: <strong>{{data $os.DataEmissao}}</strong></div>
+      {{if $orc}}
+        {{if not $os.ValidoAte.IsZero}}<div class="meta">Válido até: <strong>{{data $os.ValidoAte}}</strong></div>{{end}}
+      {{else}}
+        <div class="meta">Situação: <strong>{{$os.Status.Rotulo}}</strong>{{if not $os.AgendadaPara.IsZero}} para {{dataHora $os.AgendadaPara}}{{end}}</div>
+        <div class="meta">Pagamento: <strong>{{$os.Pagamento.Status.Rotulo}}</strong>{{if $os.Pagamento.Forma}} · {{$os.Pagamento.Forma.Rotulo}}{{end}}</div>
+      {{end}}
+    </div>
+  </header>
+
+  {{/* ---------- 2. CORPO ---------- */}}
+  <section class="corpo">
+    {{$c := $os.Cliente}}{{$v := $os.Veiculo}}{{$t := $os.Trajeto}}{{$sol := $os.Solicitante}}
+    {{$temCliente := or $c.Nome $c.Documento $c.Telefone $sol.Nome}}
+    {{$temVeiculo := or $v.Categoria $v.Modelo $v.Ano $v.Cor $v.Placa $v.Condicao}}
+    {{$temTrajeto := or $t.Origem $t.Referencia $t.Destino $t.Km}}
+    {{if or $temCliente $temVeiculo $temTrajeto}}
+    <div class="blocos">
+      {{if $temCliente}}
+      <div class="bloco">
+        <h3>Cliente</h3>
+        {{with $c.Nome}}<div class="campo"><span>Nome</span>{{.}}</div>{{end}}
+        {{with $c.Documento}}<div class="campo"><span>CPF/CNPJ</span>{{.}}</div>{{end}}
+        {{with $c.Telefone}}<div class="campo"><span>Telefone</span>{{.}}</div>{{end}}
+        {{if $sol.Nome}}<div class="campo"><span>Solicitante</span>{{$sol.Nome}}{{with $sol.Telefone}} · {{.}}{{end}}</div>{{end}}
+      </div>
+      {{end}}
+      {{if $temVeiculo}}
+      <div class="bloco">
+        <h3>Veículo</h3>
+        {{with $v.Modelo}}<div class="campo"><span>Modelo</span>{{.}}</div>{{end}}
+        {{with $v.Placa}}<div class="campo"><span>Placa</span><strong class="placa">{{.}}</strong></div>{{end}}
+        {{with $v.Categoria}}<div class="campo"><span>Categoria</span>{{.Rotulo}}</div>{{end}}
+        {{if or $v.Ano $v.Cor}}<div class="campo"><span>Ano / cor</span>{{$v.Ano}}{{if and $v.Ano $v.Cor}} · {{end}}{{$v.Cor}}</div>{{end}}
+        {{with $v.Condicao}}<div class="campo"><span>Condição</span>{{.}}</div>{{end}}
+      </div>
+      {{end}}
+      {{if $temTrajeto}}
+      <div class="bloco">
+        <h3>Trajeto</h3>
+        {{with $t.Origem}}<div class="campo"><span>Origem</span>{{.}}</div>{{end}}
+        {{with $t.Referencia}}<div class="campo"><span>Referência</span>{{.}}</div>{{end}}
+        {{with $t.Destino}}<div class="campo"><span>Destino</span>{{.}}</div>{{end}}
+        {{with $t.Km}}<div class="campo"><span>Distância</span>{{.}} km</div>{{end}}
+      </div>
+      {{end}}
+    </div>
+    {{end}}
+
+    <table class="itens">
+      <thead>
+        <tr><th class="desc">Descrição</th><th class="num">Qtd</th><th class="num">Unitário</th><th class="num">Total</th></tr>
+      </thead>
+      <tbody>
+        {{range $os.Itens}}
+        <tr>
+          <td class="desc">{{.Descricao}}</td>
+          <td class="num">{{qtd .QuantidadeCentesimos}} {{.RotuloUnidade}}</td>
+          <td class="num">{{reais .ValorUnitarioCentavos}}</td>
+          <td class="num">{{reais .Subtotal}}</td>
+        </tr>
+        {{else}}
+        <tr><td class="desc vazio" colspan="4">Sem itens</td></tr>
+        {{end}}
+      </tbody>
+      <tfoot>
+        {{if $os.DescontoCentavos}}
+        <tr class="parcial"><td colspan="3">Subtotal</td><td class="num">{{reais $os.Subtotal}}</td></tr>
+        <tr class="parcial"><td colspan="3">Desconto</td><td class="num">-{{reais $os.DescontoCentavos}}</td></tr>
+        {{end}}
+        <tr class="total"><td colspan="3">TOTAL</td><td class="num">{{reais $os.Total}}</td></tr>
+        {{if and (not $orc) $os.Pagamento.ValorCentavos}}
+        <tr class="pago"><td colspan="3">Valor pago{{with $os.Pagamento.Forma}} ({{.Rotulo}}){{end}}</td><td class="num">{{reais $os.Pagamento.ValorCentavos}}</td></tr>
+        <tr class="saldo"><td colspan="3">Saldo</td><td class="num">{{reais $os.SaldoCentavos}}</td></tr>
+        {{end}}
+        {{if and (not $orc) (eq $os.Pagamento.Forma "FATURADO") (not $os.Pagamento.Vencimento.IsZero)}}
+        <tr class="pago"><td colspan="3">Vencimento</td><td class="num">{{data $os.Pagamento.Vencimento}}</td></tr>
+        {{end}}
+      </tfoot>
+    </table>
+  </section>
+
+  {{/* ---------- 3. RODAPÉ ---------- */}}
+  {{$temTexto := or $os.Observacoes (and (not $orc) (or $os.Motorista.Nome $os.Guincho $os.RecebidoPor)) (and $orc .Empresa.OrcamentoCondicoes)}}
+  {{if or $temTexto .Grupos}}
+  <footer class="rodape">
+    {{if $temTexto}}
+    <div class="texto">
+      {{if not $orc}}
+        {{with $os.Motorista.Nome}}<div class="campo"><span>Motorista</span>{{.}}</div>{{end}}
+        {{with $os.Guincho}}<div class="campo"><span>Guincho</span>{{.}}</div>{{end}}
+        {{with $os.RecebidoPor}}<div class="campo"><span>Recebido por</span>{{.}}</div>{{end}}
+      {{end}}
+      {{with $os.Observacoes}}<h3>Observações</h3><p class="observacoes">{{.}}</p>{{end}}
+      {{if $orc}}{{with .Empresa.OrcamentoCondicoes}}<h3>Condições</h3><p class="observacoes condicoes">{{.}}</p>{{end}}{{end}}
+    </div>
+    {{end}}
+    {{if .Grupos}}
+    <div class="fotos">
+      {{range .Grupos}}
+      <div class="grupo-fotos">
+        <h3>{{if eq .Etapa "OUTRA"}}Fotos{{else}}Fotos · {{.Etapa.Rotulo}}{{end}}</h3>
+        <div class="miniaturas">{{range .Imagens}}<img src="/imagens/{{.ID}}/miniatura" alt="">{{end}}</div>
+      </div>
+      {{end}}
+    </div>
+    {{end}}
+  </footer>
+  {{end}}
+
+</article>
+
+{{if .Auto}}<script>window.addEventListener('load', function () { window.print(); });</script>{{end}}
+</body>
+</html>{{end}}

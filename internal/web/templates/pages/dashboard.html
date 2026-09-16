@@ -1,0 +1,130 @@
+{{define "conteudo"}}
+{{$ind := .Ind}}
+<div class="cabecalho-pagina">
+  <div>
+    <h1>Visão geral</h1>
+    <p class="mudo">Só ordens de serviço entram nos valores; orçamentos aparecem à parte.</p>
+  </div>
+  <nav class="periodo" aria-label="Mês">
+    <a class="botao icone" href="/?mes={{mesInput .MesAnterior}}" title="Mês anterior"><svg class="virado"><use href="#i-seta"/></svg></a>
+    <span class="periodo-atual">{{mesAno $ind.Periodo.De}}</span>
+    {{if .EhMesAtual}}<span class="botao icone desabilitado" aria-hidden="true"><svg><use href="#i-seta"/></svg></span>{{else}}
+    <a class="botao icone" href="/?mes={{mesInput .MesSeguinte}}" title="Mês seguinte"><svg><use href="#i-seta"/></svg></a>{{end}}
+  </nav>
+</div>
+
+<div class="kpis">
+  <div class="kpi destaque">
+    <span class="kpi-rotulo">A receber</span>
+    <strong>{{reais $ind.AReceberCentavos}}</strong>
+    <span class="kpi-nota">{{$ind.AReceberQuantidade}} OS em aberto</span>
+  </div>
+  <div class="kpi">
+    <span class="kpi-rotulo">Faturado no mês</span>
+    <strong>{{reais $ind.FaturadoCentavos}}</strong>
+    <span class="kpi-nota">{{$ind.OSQuantidade}} OS · ticket {{reais $ind.TicketMedioCentavos}}</span>
+  </div>
+  <div class="kpi">
+    <span class="kpi-rotulo">Recebido no mês</span>
+    <strong>{{reais $ind.RecebidoCentavos}}</strong>
+    <span class="kpi-nota">{{percentual $ind.RecebidoCentavos $ind.FaturadoCentavos}}% do faturado</span>
+  </div>
+  <div class="kpi">
+    <span class="kpi-rotulo">Orçamentos aguardando</span>
+    <strong>{{$ind.OrcamentosAbertos}}</strong>
+    <span class="kpi-nota">{{reais $ind.OrcamentosAbertosCentavos}} em potencial{{if $ind.OrcamentosExpirados}} · {{$ind.OrcamentosExpirados}} expirados{{end}}</span>
+  </div>
+</div>
+
+<div class="mini-kpis">
+  <a class="mini-kpi" href="/os?status=AGENDADA"><svg><use href="#i-relogio"/></svg><strong>{{$ind.Agendadas}}</strong><span>agendadas</span></a>
+  <a class="mini-kpi" href="/os?status=EM_ANDAMENTO"><svg><use href="#i-guincho"/></svg><strong>{{$ind.EmAndamento}}</strong><span>em andamento</span></a>
+  <a class="mini-kpi" href="/os?status=CONCLUIDA"><svg><use href="#i-check"/></svg><strong>{{$ind.ConcluidasHoje}}</strong><span>concluídas hoje</span></a>
+  <div class="mini-kpi"><svg><use href="#i-orcamento"/></svg><strong>{{$ind.ConversaoPercentual}}%</strong><span>conversão no mês</span></div>
+</div>
+
+<div class="grade-2-1">
+  <section class="cartao">
+    <h2>Faturamento · últimos 6 meses</h2>
+    <div class="grafico-barras" role="img" aria-label="Faturamento por mês">
+      {{$max := $ind.MaiorFaturamentoMensal}}
+      {{range $ind.FaturamentoMensal}}
+      <div class="barra-coluna" title="{{mesAno .Mes}}: {{reais .Centavos}} ({{.Quantidade}} OS)">
+        <span class="barra-valor">{{if .Centavos}}{{valor .Centavos}}{{end}}</span>
+        <div class="barra" style="height: {{percentual .Centavos $max}}%"></div>
+        <span class="barra-rotulo">{{mesCurto .Mes}}</span>
+      </div>
+      {{end}}
+    </div>
+  </section>
+
+  <section class="cartao">
+    <h2>Recebido por forma · mês</h2>
+    {{if $ind.PorFormaPagamento}}
+    {{$total := $ind.TotalRecebidoPorForma}}
+    <ul class="lista-formas">
+      {{range $ind.PorFormaPagamento}}
+      <li>
+        <div class="forma-linha"><span>{{.Forma.Rotulo}}</span><strong>{{reais .Centavos}}</strong></div>
+        <div class="forma-trilho"><div class="forma-barra" style="width: {{percentual .Centavos $total}}%"></div></div>
+      </li>
+      {{end}}
+    </ul>
+    {{else}}
+    <p class="mudo">Nenhum recebimento registrado neste mês.</p>
+    {{end}}
+  </section>
+</div>
+
+<div class="grade-1-1">
+  <section class="cartao">
+    <div class="cartao-cabecalho">
+      <h2>Orçamentos aguardando resposta</h2>
+      <a href="/orcamentos" class="link-mais">ver todos</a>
+    </div>
+    {{if .Aguardando}}
+    <ul class="lista-compacta">
+      {{range .Aguardando}}
+      <li class="cartao-link" data-href="/os/{{.ID}}">
+        <div>
+          <a href="/os/{{.ID}}" class="numero">{{.Numero}}</a>
+          <span class="mudo">{{or .ClienteNome "—"}}</span>
+        </div>
+        <div class="direita">
+          <strong>{{reais .TotalCentavos}}</strong>
+          {{template "badge_status" .Status}}
+        </div>
+      </li>
+      {{end}}
+    </ul>
+    {{else}}
+    <p class="mudo">Nenhum orçamento em aberto.</p>
+    {{end}}
+  </section>
+
+  <section class="cartao">
+    <div class="cartao-cabecalho">
+      <h2>Últimas ordens</h2>
+      <a href="/os" class="link-mais">ver todas</a>
+    </div>
+    {{if .Recentes}}
+    <ul class="lista-compacta">
+      {{range .Recentes}}
+      <li class="cartao-link" data-href="/os/{{.ID}}">
+        <div>
+          <a href="/os/{{.ID}}" class="numero">{{.Numero}}</a>
+          <span class="mudo">{{or .ClienteNome "—"}}{{if .VeiculoPlaca}} · {{.VeiculoPlaca}}{{end}}</span>
+        </div>
+        <div class="direita">
+          <strong>{{reais .TotalCentavos}}</strong>
+          <span class="badges">{{template "badge_status" .Status}} {{template "badge_pagamento" .StatusPagamento}}</span>
+        </div>
+      </li>
+      {{end}}
+    </ul>
+    {{else}}
+    <p class="mudo">Nenhuma OS ainda. <a href="/os/nova">Criar a primeira</a>.</p>
+    {{end}}
+  </section>
+</div>
+{{end}}

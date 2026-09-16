@@ -1,0 +1,61 @@
+{{define "conteudo"}}
+<div class="cabecalho-pagina">
+  <div>
+    <h1>Clientes</h1>
+    <p class="mudo">Quem contrata: pessoas na estrada, oficinas, locadoras, órgãos públicos.</p>
+  </div>
+  <a class="botao primario" href="/clientes/novo"><svg><use href="#i-mais"/></svg> Novo cliente</a>
+</div>
+
+<form class="filtros tres" method="get" action="/clientes"
+      hx-get="/clientes" hx-target="#lista" hx-trigger="submit, input changed delay:300ms" hx-indicator="#lista">
+  <label class="campo-busca">
+    <svg><use href="#i-busca"/></svg>
+    <input type="search" name="q" value="{{.Filtro.Busca}}" placeholder="Nome, CPF/CNPJ, telefone ou cidade" aria-label="Buscar">
+  </label>
+  <select name="categoria" aria-label="Categoria">
+    <option value="">Categoria: todas</option>
+    {{range .Categorias}}<option value="{{.}}" {{if eq $.Filtro.Categoria .}}selected{{end}}>{{.Rotulo}}</option>{{end}}
+  </select>
+  <label class="caixa"><input type="checkbox" name="inativos" value="1" {{if .Filtro.IncluirInativos}}checked{{end}}> Mostrar inativos</label>
+  <noscript><button type="submit" class="botao">Filtrar</button></noscript>
+</form>
+
+<div id="lista">{{template "clientes_tabela" .}}</div>
+{{end}}
+
+{{define "clientes_tabela"}}
+{{if .Lista.Clientes}}
+<p class="mudo pequeno">{{.Lista.Total}} cliente{{if ne .Lista.Total 1}}s{{end}}</p>
+<div class="tabela-rolavel">
+<table class="tabela-os tabela-clientes">
+  <thead><tr><th>Nome</th><th>Documento</th><th>Telefone</th><th>Cidade</th><th>Categoria</th><th>Situação</th></tr></thead>
+  <tbody>
+    {{range .Lista.Clientes}}
+    <tr data-href="/clientes/{{.ID}}">
+      <td data-rotulo="Nome"><a href="/clientes/{{.ID}}" class="numero">{{.Nome}}</a>{{if .Sistema}} <span class="mudo pequeno">(padrão)</span>{{end}}</td>
+      <td data-rotulo="Documento">{{or .Documento "—"}}</td>
+      <td data-rotulo="Telefone">{{or .Telefone "—"}}</td>
+      <td data-rotulo="Cidade">{{or .Cidade "—"}}</td>
+      <td data-rotulo="Categoria">{{.Categoria.Rotulo}}</td>
+      <td data-rotulo="Situação">{{template "badge_ativo" .Ativo}}</td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+</div>
+{{if gt .Lista.TotalPaginas 1}}
+<nav class="paginacao">
+  {{if .Lista.TemAnterior}}<a class="botao" href="/clientes?q={{.Filtro.Busca | urlquery}}&categoria={{.Filtro.Categoria}}&pagina={{dec .Lista.Pagina}}">‹ Anterior</a>{{end}}
+  <span class="mudo">Página {{.Lista.Pagina}} de {{.Lista.TotalPaginas}}</span>
+  {{if .Lista.TemProxima}}<a class="botao" href="/clientes?q={{.Filtro.Busca | urlquery}}&categoria={{.Filtro.Categoria}}&pagina={{inc .Lista.Pagina}}">Próxima ›</a>{{end}}
+</nav>
+{{end}}
+{{else}}
+<div class="vazio">
+  <svg><use href="#i-clientes"/></svg>
+  <p>Nenhum cliente encontrado.</p>
+  <a class="botao primario" href="/clientes/novo">Cadastrar cliente</a>
+</div>
+{{end}}
+{{end}}

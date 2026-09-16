@@ -1,0 +1,17 @@
+{{define "conteudo"}}
+<section class="login">
+  <div class="login-cartao">
+    {{if .Empresa.TemLogo}}<img class="login-logo" src="/empresa/logo?v={{.Empresa.AtualizadaEm.Unix}}" alt="{{.Empresa.NomeExibicao}}">{{else}}
+    <span class="marca-icone grande"><svg><use href="#i-guincho"/></svg></span>{{end}}
+    <h1>{{.Empresa.NomeExibicao}}</h1>
+    <p class="mudo">Ordens de serviço e orçamentos</p>
+    {{with .Erro}}<div class="alerta erro">{{.}}</div>{{end}}
+    <form method="post" action="/login">
+      <input type="hidden" name="next" value="{{.Next}}">
+      <label for="senha">Senha de acesso</label>
+      <input id="senha" name="senha" type="password" autocomplete="current-password" autofocus required>
+      <button type="submit" class="botao primario largo grande">Entrar</button>
+    </form>
+  </div>
+</section>
+{{end}}

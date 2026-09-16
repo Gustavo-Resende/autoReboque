@@ -1,0 +1,310 @@
+{{define "conteudo"}}
+{{$f := .Form}}
+<div class="cabecalho-pagina">
+  <div>
+    <p class="mudo pequeno"><a href="{{if .OS}}/os/{{.OS.ID}}{{else}}/orcamentos{{end}}">‹ {{if .OS}}Voltar para {{.OS.Numero}}{{else}}Orçamentos{{end}}</a></p>
+    <h1>{{if .OS}}Editar {{.OS.Numero}}{{else}}Novo orçamento{{end}}</h1>
+    {{if not .OS}}<p class="mudo">Só o cliente é obrigatório. Preencha o que fizer sentido; o resto some da impressão.</p>{{end}}
+  </div>
+</div>
+
+{{if .Conflito}}
+<div class="alerta erro" role="alert">
+  <strong>Esta OS foi alterada por outra pessoa enquanto você editava.</strong>
+  Suas mudanças não foram salvas para não sobrescrever as dela.
+  <a href="/os/{{.OS.ID}}/editar">Recarregar</a> e refazer as alterações.
+</div>
+{{end}}
+{{with $f.Erros}}
+<div class="alerta erro" role="alert"><ul>{{range .}}<li>{{.}}</li>{{end}}</ul></div>
+{{end}}
+
+<form method="post" action="{{if .OS}}/os/{{.OS.ID}}{{else}}/os{{end}}" id="form-os" class="form-os" autocomplete="off">
+  <input type="hidden" name="versao" value="{{$f.Versao}}">
+
+  {{/* ---------- 1. Cliente ---------- */}}
+  <section class="cartao" id="secao-cliente" data-modo="{{if $f.ClienteID}}selecionado{{else if $f.NovoClienteNome}}novo{{else}}busca{{end}}">
+    <h2><span class="passo">1</span> Cliente</h2>
+    <input type="hidden" name="cliente_id" id="cliente_id" value="{{if $f.ClienteID}}{{$f.ClienteID}}{{end}}">
+
+    <div class="cliente-busca">
+      <label class="campo-busca">
+        <svg><use href="#i-busca"/></svg>
+        <input type="search" id="busca-cliente" name="q" placeholder="Buscar por nome, CPF/CNPJ ou telefone"
+               hx-get="/clientes/busca" hx-trigger="input changed delay:250ms, focus" hx-target="#sugestoes-cliente" hx-swap="innerHTML">
+      </label>
+      <div id="sugestoes-cliente" class="sugestoes-cliente"></div>
+      <div class="acoes-linha">
+        <button type="button" class="botao" data-cliente-particular="{{.ParticularID}}">Serviço particular (sem cadastro)</button>
+        <button type="button" class="botao" data-cliente-novo>+ Cadastrar novo</button>
+      </div>
+    </div>
+
+    <div class="cliente-selecionado">
+      <div class="cliente-cartao">
+        <div>
+          <strong id="sel-nome">{{$f.ClienteNome}}</strong>
+          <span class="mudo" id="sel-detalhe">{{$f.ClienteDocumento}}{{if and $f.ClienteDocumento $f.ClienteTelefone}} · {{end}}{{$f.ClienteTelefone}}</span>
+        </div>
+        <button type="button" class="botao pequeno" data-cliente-trocar>Trocar</button>
+      </div>
+    </div>
+
+    <div class="cliente-novo">
+      <p class="mudo pequeno">Cadastro rápido — vira um cliente completo, que você pode complementar depois.</p>
+      <div class="grade-campos-3">
+        <div class="col-2">
+          <label for="novo_cliente_nome">Nome *</label>
+          <input id="novo_cliente_nome" name="novo_cliente_nome" value="{{$f.NovoClienteNome}}">
+        </div>
+        <div>
+          <label for="novo_cliente_tipo">Tipo</label>
+          <select id="novo_cliente_tipo" name="novo_cliente_tipo">
+            <option value="PF" {{if eq $f.NovoClienteTipo "PF"}}selected{{end}}>Pessoa física</option>
+            <option value="PJ" {{if eq $f.NovoClienteTipo "PJ"}}selected{{end}}>Pessoa jurídica</option>
+          </select>
+        </div>
+        <div>
+          <label for="novo_cliente_telefone">Telefone / WhatsApp</label>
+          <input id="novo_cliente_telefone" name="novo_cliente_telefone" value="{{$f.NovoClienteTelefone}}" inputmode="tel">
+        </div>
+        <div>
+          <label for="novo_cliente_documento">CPF / CNPJ</label>
+          <input id="novo_cliente_documento" name="novo_cliente_documento" value="{{$f.NovoClienteDocumento}}" inputmode="numeric">
+        </div>
+        <div class="alinhar-fim">
+          <button type="button" class="botao pequeno" data-cliente-trocar>Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <details class="detalhes" {{if or $f.SolicitanteNome $f.SolicitanteTelefone}}open{{end}}>
+      <summary>Quem solicitou, se não for o cliente</summary>
+      <div class="grade-campos-2">
+        <div><label for="solicitante_nome">Nome</label><input id="solicitante_nome" name="solicitante_nome" value="{{$f.SolicitanteNome}}"></div>
+        <div><label for="solicitante_telefone">Telefone</label><input id="solicitante_telefone" name="solicitante_telefone" value="{{$f.SolicitanteTelefone}}" inputmode="tel"></div>
+      </div>
+    </details>
+  </section>
+
+  {{/* ---------- 2. Veículo ---------- */}}
+  <section class="cartao">
+    <h2><span class="passo">2</span> Veículo</h2>
+    <div class="rotulo-grupo">
+      <label>Porte</label>
+      <button type="button" class="link pequeno" data-limpar-categoria {{if not $f.VeiculoCategoria}}hidden{{end}}>limpar</button>
+    </div>
+    <div class="opcoes-porte" id="opcoes-porte">
+      {{range .Categorias}}
+      <label class="opcao-porte">
+        <input type="radio" name="veiculo_categoria" value="{{.}}" {{if eq (print .) $f.VeiculoCategoria}}checked{{end}}>
+        <svg><use href="#{{.Icone}}"/></svg>
+        <span class="opcao-titulo">{{.Rotulo}}</span>
+        <span class="opcao-exemplos">{{.Exemplos}}</span>
+      </label>
+      {{end}}
+    </div>
+    <div class="grade-campos-3">
+      <div><label for="veiculo_modelo">Modelo</label><input id="veiculo_modelo" name="veiculo_modelo" value="{{$f.VeiculoModelo}}" placeholder="Ex.: Fiat Strada"></div>
+      <div><label for="veiculo_placa">Placa</label><input id="veiculo_placa" name="veiculo_placa" value="{{$f.VeiculoPlaca}}" class="placa-input" autocapitalize="characters" maxlength="8"></div>
+      <div><label for="veiculo_ano">Ano</label><input id="veiculo_ano" name="veiculo_ano" value="{{$f.VeiculoAno}}" placeholder="2019/2020"></div>
+      <div><label for="veiculo_cor">Cor</label><input id="veiculo_cor" name="veiculo_cor" value="{{$f.VeiculoCor}}"></div>
+      <div>
+        <label for="veiculo_condicao">Condição</label>
+        <input id="veiculo_condicao" name="veiculo_condicao" value="{{$f.VeiculoCondicao}}" list="condicoes" placeholder="Roda, travado, capotado…">
+        <datalist id="condicoes"><option value="Roda"><option value="Travado"><option value="Capotado"><option value="Sem chave"><option value="Batido"><option value="Sem rodas"></datalist>
+      </div>
+    </div>
+  </section>
+
+  {{/* ---------- 3. Trajeto ---------- */}}
+  <section class="cartao">
+    <h2><span class="passo">3</span> Trajeto</h2>
+    <div class="grade-campos-3">
+      <div class="col-2"><label for="trajeto_origem">Origem (onde o veículo está)</label><input id="trajeto_origem" name="trajeto_origem" value="{{$f.TrajetoOrigem}}"></div>
+      <div><label for="trajeto_referencia">Ponto de referência</label><input id="trajeto_referencia" name="trajeto_referencia" value="{{$f.TrajetoReferencia}}"></div>
+      <div class="col-2"><label for="trajeto_destino">Destino</label><input id="trajeto_destino" name="trajeto_destino" value="{{$f.TrajetoDestino}}"></div>
+      <div><label for="trajeto_km">Distância (km)</label><input id="trajeto_km" name="trajeto_km" value="{{$f.TrajetoKm}}" inputmode="numeric" class="num"></div>
+    </div>
+  </section>
+
+  {{/* ---------- 4. Serviços ---------- */}}
+  <section class="cartao">
+    <h2><span class="passo">4</span> Serviços e valores</h2>
+    <div class="sugestoes">
+      {{range .Servicos}}
+      <button type="button" class="chip" hx-get="/os/item-linha?servico={{.ID}}" hx-vals='js:{km: document.getElementById("trajeto_km").value}'
+              hx-target="#itens tbody" hx-swap="beforeend" title="{{reais .PrecoCentavos}} por {{unidade (print .Unidade)}}">
+        {{.Nome}} <span class="chip-preco">{{valor .PrecoCentavos}}</span>
+      </button>
+      {{end}}
+      <button type="button" class="chip vazado" hx-get="/os/item-linha" hx-target="#itens tbody" hx-swap="beforeend">+ Outro item</button>
+    </div>
+    <div class="tabela-rolavel">
+    <table id="itens" class="tabela-itens">
+      <thead><tr><th>Descrição</th><th class="num">Qtd</th><th class="num">Unitário</th><th class="num">Total</th><th></th></tr></thead>
+      <tbody>{{range $f.Itens}}{{template "os_item_linha" .}}{{end}}</tbody>
+      <tfoot>
+        <tr class="linha-desconto">
+          <td colspan="2" class="num rotulo-rodape">Desconto</td>
+          <td class="num"><input name="desconto" id="desconto" value="{{$f.Desconto}}" inputmode="decimal" class="medio num" placeholder="0,00"></td>
+          <td class="num" id="desconto-previa"></td><td></td>
+        </tr>
+        <tr class="linha-total"><td colspan="3" class="num rotulo-rodape">Total</td><td class="num total" id="total-previa">{{reais $f.TotalPrevia}}</td><td></td></tr>
+      </tfoot>
+    </table>
+    </div>
+  </section>
+
+  {{/* ---------- 5. Atendimento ---------- */}}
+  <section class="cartao">
+    <h2><span class="passo">5</span> Atendimento</h2>
+    <div class="grade-campos-3">
+      <div><label for="data_emissao">Data de emissão *</label><input id="data_emissao" name="data_emissao" type="date" value="{{$f.DataEmissao}}" required></div>
+      <div><label for="acionado_em">Acionado em</label><input id="acionado_em" name="acionado_em" type="datetime-local" value="{{$f.AcionadoEm}}"></div>
+      <div>
+        <label for="motorista_id">Motorista</label>
+        <select id="motorista_id" name="motorista_id">
+          <option value="">—</option>
+          {{range .Motoristas}}<option value="{{.ID}}" {{if eq .ID $f.MotoristaID}}selected{{end}}>{{.Nome}}</option>{{end}}
+        </select>
+      </div>
+      <div><label for="guincho">Guincho utilizado</label><input id="guincho" name="guincho" value="{{$f.Guincho}}" placeholder="Ex.: Plataforma 1"></div>
+      {{if and .OS (not .OS.EhOrcamento)}}
+      <div><label for="recebido_por">Recebido no destino por</label><input id="recebido_por" name="recebido_por" value="{{$f.RecebidoPor}}"></div>
+      {{end}}
+    </div>
+  </section>
+
+  {{/* ---------- 6. Observações ---------- */}}
+  <section class="cartao">
+    <h2><span class="passo">6</span> Observações</h2>
+    <label for="observacoes" class="oculto">Observações</label>
+    <textarea id="observacoes" name="observacoes" rows="4" placeholder="Avarias pré-existentes, combinados com o cliente, detalhes do resgate…">{{$f.Observacoes}}</textarea>
+  </section>
+
+  <div class="acoes fixas">
+    <span class="total-fixo">Total <strong id="total-fixo">{{reais $f.TotalPrevia}}</strong></span>
+    <button type="submit" class="botao primario grande">{{if .OS}}Salvar alterações{{else}}Criar orçamento{{end}}</button>
+  </div>
+</form>
+
+<script>
+  (function () {
+    // ---- cliente: busca, seleção, cadastro rápido ----
+    var secao = document.getElementById('secao-cliente');
+    var idCliente = document.getElementById('cliente_id');
+    function modo(m) { secao.dataset.modo = m; }
+    function selecionar(id, nome, detalhe) {
+      idCliente.value = id;
+      document.getElementById('sel-nome').textContent = nome;
+      document.getElementById('sel-detalhe').textContent = detalhe || '';
+      modo('selecionado');
+    }
+    secao.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-sugestao]');
+      if (b) { selecionar(b.dataset.id, b.dataset.nome, b.dataset.detalhe); return; }
+      b = e.target.closest('[data-cliente-particular]');
+      if (b) { selecionar(b.dataset.clienteParticular, 'Serviço particular', 'sem cadastro'); return; }
+      b = e.target.closest('[data-cliente-novo]');
+      if (b) { idCliente.value = ''; modo('novo'); document.getElementById('novo_cliente_nome').focus(); return; }
+      b = e.target.closest('[data-cliente-trocar]');
+      if (b) { idCliente.value = ''; modo('busca'); document.getElementById('busca-cliente').focus(); }
+    });
+
+    // ---- porte do veículo: cartões de rádio, com opção de limpar ----
+    var limpar = document.querySelector('[data-limpar-categoria]');
+    document.getElementById('opcoes-porte').addEventListener('change', function () { limpar.hidden = false; });
+    limpar.addEventListener('click', function () {
+      document.querySelectorAll('#opcoes-porte input').forEach(function (i) { i.checked = false; });
+      limpar.hidden = true;
+    });
+
+    // ---- itens: prévia do total e quantidade que acompanha o km ----
+    function numero(texto) {
+      texto = (texto || '').replace(/\s|R\$/g, '');
+      if (!texto) return 0;
+      if (texto.indexOf(',') >= 0) texto = texto.replace(/\./g, '').replace(',', '.');
+      else if (/^\d{1,3}(\.\d{3})+$/.test(texto)) texto = texto.replace(/\./g, '');
+      var n = parseFloat(texto);
+      return isNaN(n) ? 0 : n;
+    }
+    function reais(n) {
+      return (n < 0 ? '-' : '') + 'R$ ' + Math.abs(n).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+    function recalcular() {
+      var total = 0;
+      document.querySelectorAll('#itens tbody tr').forEach(function (tr) {
+        var q = numero(tr.querySelector('[name=item_quantidade]').value);
+        var v = numero(tr.querySelector('[name=item_valor]').value);
+        var sub = Math.round(q * v * 100) / 100;
+        tr.querySelector('.subtotal').textContent = reais(sub);
+        total += sub;
+      });
+      var desconto = numero(document.getElementById('desconto').value);
+      document.getElementById('desconto-previa').textContent = desconto ? '-' + reais(desconto) : '';
+      var texto = reais(total - desconto);
+      document.getElementById('total-previa').textContent = texto;
+      document.getElementById('total-fixo').textContent = texto;
+    }
+    var km = document.getElementById('trajeto_km');
+    document.addEventListener('input', function (e) {
+      if (e.target === km) {
+        document.querySelectorAll('#itens tbody tr[data-do-km="1"] [name=item_quantidade]').forEach(function (i) { i.value = km.value; });
+      }
+      if (e.target.closest('#itens') || e.target === km) recalcular();
+    });
+    document.addEventListener('click', function (e) {
+      var botao = e.target.closest('.remover-item');
+      if (botao) { botao.closest('tr').remove(); recalcular(); }
+    });
+    document.body.addEventListener('htmx:afterSwap', function (e) {
+      if (e.target.closest && e.target.closest('#itens')) {
+        var linha = e.target.querySelector('tr:last-child');
+        if (linha) {
+          var foco = linha.dataset.doKm === '1' && !linha.querySelector('[name=item_quantidade]').value
+            ? linha.querySelector('[name=item_quantidade]')
+            : (linha.querySelector('[name=item_descricao]').value ? linha.querySelector('[name=item_valor]') : linha.querySelector('[name=item_descricao]'));
+          foco.focus();
+        }
+        recalcular();
+      }
+    });
+    recalcular();
+  })();
+</script>
+{{end}}
+
+{{/* Uma linha da tabela de itens. Também é devolvida sozinha pelo HTMX
+     em GET /os/item-linha para adicionar itens sem recarregar a página. */}}
+{{define "os_item_linha"}}
+<tr data-do-km="{{if .DoKm}}1{{else}}0{{end}}">
+  <td data-rotulo="Descrição">
+    <input type="hidden" name="item_servico_id" value="{{.ServicoID}}">
+    <input type="hidden" name="item_unidade" value="{{or .Unidade "UN"}}">
+    <input type="hidden" name="item_do_km" value="{{if .DoKm}}1{{else}}0{{end}}">
+    <input name="item_descricao" value="{{.Descricao}}" placeholder="Descrição">
+  </td>
+  <td data-rotulo="Qtd" class="num">
+    <div class="com-sufixo"><input name="item_quantidade" value="{{.Quantidade}}" inputmode="decimal" class="curto num" placeholder="1"><span>{{unidade (or .Unidade "UN")}}</span></div>
+  </td>
+  <td data-rotulo="Unitário" class="num"><input name="item_valor" value="{{.ValorUnitario}}" inputmode="decimal" class="medio num" placeholder="0,00"></td>
+  <td data-rotulo="Total" class="num subtotal">—</td>
+  <td class="num"><button type="button" class="remover-item" title="Remover item" aria-label="Remover item"><svg><use href="#i-x"/></svg></button></td>
+</tr>
+{{end}}
+
+{{/* Sugestões da busca de cliente (HTMX). */}}
+{{define "clientes_sugestoes"}}
+{{if .Sugestoes}}
+<ul class="lista-sugestoes">
+  {{range .Sugestoes}}
+  <li><button type="button" data-sugestao data-id="{{.ID}}" data-nome="{{.Nome}}" data-detalhe="{{.Documento}}{{if and .Documento .Telefone}} · {{end}}{{.Telefone}}">
+    <strong>{{.Nome}}</strong><span class="mudo">{{.Documento}}{{if and .Documento .Telefone}} · {{end}}{{.Telefone}}{{if .Cidade}} · {{.Cidade}}{{end}}</span>
+  </button></li>
+  {{end}}
+</ul>
+{{else if .Busca}}
+<p class="mudo pequeno sem-resultado">Nenhum cliente com "{{.Busca}}". Use <em>Cadastrar novo</em> ou <em>Serviço particular</em>.</p>
+{{end}}
+{{end}}
