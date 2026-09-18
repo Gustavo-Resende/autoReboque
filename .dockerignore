@@ -1,0 +1,9 @@
+.git
+bin/
+dados/
+docs/
+.claude/
+.env
+.env.*
+!.env.example
+*.md

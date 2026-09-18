@@ -1,4 +1,14 @@
-# Sobe apenas o Postgres. A aplicação roda no host com `go run ./cmd/server`.
+# Ambiente de desenvolvimento completo: Postgres, pgAdmin e a API.
+#
+#   docker compose up -d                  # sobe tudo (banco, pgAdmin e API)
+#   docker compose up -d db pgadmin       # só banco + interface; a API roda no host com `go run ./cmd/server`
+#   docker compose build api              # reconstrói a imagem da API depois de mudar código
+#   docker compose down -v                # apaga os volumes (zera o banco)
+#
+# pgAdmin: http://localhost:5050 — o servidor "autoReboque (docker)" já vem
+# cadastrado; a senha do banco é "autoreboque" (marque "salvar senha").
+name: autoreboque
+
 services:
   db:
     image: postgres:17-alpine
@@ -19,5 +29,43 @@ services:
       timeout: 3s
       retries: 10
 
+  pgadmin:
+    image: dpage/pgadmin4:9
+    container_name: autoreboque-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@autoreboque.local
+      PGADMIN_DEFAULT_PASSWORD: autoreboque
+      # Modo desktop: abre direto, sem tela de login (é só para desenvolvimento local).
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "5050:80"
+    volumes:
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
+      - pgadmin:/var/lib/pgadmin
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build: .
+    container_name: autoreboque-api
+    # Lê o .env (SENHA_HASH etc.) e sobrescreve o que muda dentro da rede do Docker.
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://autoreboque:autoreboque@db:5432/autoreboque?sslmode=disable
+      HTTP_ADDR: ":8080"
+      STORAGE_DIR: /dados/uploads
+      DEV: "false"
+    ports:
+      - "8080:8080"
+    volumes:
+      - uploads:/dados/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   pgdata:
+  pgadmin:
+  uploads:
