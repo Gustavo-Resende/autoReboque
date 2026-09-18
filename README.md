@@ -1,106 +1,87 @@
-# Sistema de OS para guincho — Auto Socorro Trevo
+# autoReboque — API
 
-Sistema de ordens de serviço e orçamentos para empresas de guincho/reboque.
-Nasceu para a Auto Socorro Trevo e é configurável (logo, cor, dados, serviços,
-preços, clientes) para servir outras guincheiras.
+Backend do **autoReboque**, sistema de orçamentos e ordens de serviço para
+empresas de guincho/reboque. Produto genérico (white-label leve): cada
+guincheira configura logo, dados, serviços, preços, clientes e motoristas.
+Nasceu para a Auto Socorro Trevo (BA).
 
-Go + PostgreSQL + `html/template` + HTMX. Sem framework, sem build de front.
+Go 1.27 + PostgreSQL 17. Arquitetura hexagonal com CQRS, biblioteca padrão
+primeiro. O frontend é outro repositório:
+[`autoReboque-web`](https://github.com/Gustavo-Resende/autoReboque-web).
 
-## O que faz
+> **Em transição.** O código em `internal/` é a versão anterior (monólito com
+> `html/template` + HTMX) e está sendo substituído pela arquitetura descrita
+> em [`CLAUDE.md`](CLAUDE.md), seguindo o plano em
+> [`docs/planos/`](docs/planos/2026-09-18-arquitetura-hexagonal.md).
 
-- **Orçamento → OS** no mesmo registro e número (`0142/2026`): aberto, enviado,
-  expirado, recusado → agendada, em andamento, concluída, cancelada.
-- **Visão geral**: a receber, faturado/recebido no mês, orçamentos aguardando,
-  gráfico de 6 meses, formas de pagamento. Só OS conta; orçamento é rascunho.
-- **Clientes** (com cadastro rápido dentro da OS e o cliente padrão
-  "Serviço particular"), **serviços** (catálogo com preço e unidade),
-  **motoristas**.
-- **Fotos** por etapa (retirada/entrega), **impressão** A4 em preto e branco,
-  **WhatsApp** com resumo do orçamento.
-- Tema claro/escuro, celular em primeiro lugar, edição concorrente segura
-  (optimistic locking).
+## O que o sistema faz
+
+- **Orçamento → OS** no mesmo registro e número (`0142/2026`): aberto,
+  enviado, expirado, recusado → agendada, em andamento, concluída, cancelada.
+- **Clientes** (com cadastro rápido dentro da OS e o cliente padrão "Serviço
+  particular"), **serviços** (catálogo com preço e unidade), **motoristas**,
+  **empresa** (dados e identidade só nos documentos).
+- **Fotos** por etapa (retirada/entrega), **documento** para impressão A4,
+  resumo para **WhatsApp**, **visão geral** com números do mês.
+- Edição concorrente segura (optimistic locking); dinheiro em centavos.
 
 ## Subindo em desenvolvimento
 
 Pré-requisitos: Go 1.27+, Docker Desktop.
 
 ```sh
-docker compose up -d            # Postgres (e o banco de testes autosocorro_test)
-cp .env.example .env            # senha de exemplo: "trevo123"
-go run ./cmd/server             # aplica as migrations e sobe em http://localhost:8080
-go run ./cmd/seed               # (opcional) clientes, motoristas e 70 OS fictícias
+docker compose up -d db pgadmin     # Postgres + pgAdmin (http://localhost:5050)
+cp .env.example .env                # ajuste se precisar
+go run ./cmd/server                 # versão atual (legado) em http://localhost:8080
+go run ./cmd/seed                   # (opcional) dados fictícios
 ```
 
-Para trocar a senha: `go run ./cmd/hashsenha` imprime a linha `SENHA_HASH=...`
-pronta para o `.env`. Com `DEV=true`, templates e CSS são relidos do disco a cada
-requisição.
+Tudo no Docker, inclusive a API: `docker compose up -d --build`.
 
-Para zerar o banco de desenvolvimento: `docker compose down -v` e suba de novo.
+pgAdmin já vem com o servidor "autoReboque (docker)" cadastrado; senha do
+banco: `autoreboque`.
 
 ## Testes
 
 ```sh
-go test ./...                    # unitários (sem banco)
+go test ./...                       # unitários
 
-# com os testes de integração (numeração concorrente, optimistic locking, listagem, dashboard):
-export TEST_DATABASE_URL='postgres://autosocorro:autosocorro@localhost:5432/autosocorro_test?sslmode=disable'
-go test -p 1 ./...               # -p 1: os pacotes compartilham o banco de teste
+# com integração (banco descartável autoreboque_test, criado pelo compose):
+$env:TEST_DATABASE_URL = 'postgres://autoreboque:autoreboque@localhost:5432/autoreboque_test?sslmode=disable'
+go test -p 1 ./...                  # -p 1: os pacotes compartilham o banco
 ```
 
-No PowerShell: `$env:TEST_DATABASE_URL = '...'`. Nunca aponte para o banco de uso
-real: os testes apagam as tabelas.
+Nunca aponte `TEST_DATABASE_URL` para o banco de uso real: os testes apagam
+as tabelas.
 
-## Estrutura
+## Estrutura (alvo)
 
 ```
-cmd/server             ponto de entrada (config → banco → migrations → HTTP)
-cmd/seed               dados fictícios para testar telas e dashboard
-cmd/hashsenha          gera o hash bcrypt da senha de acesso
-internal/config        variáveis de ambiente (+ leitura do .env)
-internal/database      pool pgx, migrator embutido (com advisory lock), migrations/*.sql
-internal/documento     enum dos modelos de documento (hoje só OS)
-internal/ordemservico  DOMÍNIO: OS/orçamento, itens, status, numeração, dinheiro, listagem, dashboard
-internal/cliente       cadastro de clientes (+ cliente de sistema "Serviço particular")
-internal/servico       catálogo de serviços
-internal/motorista     motoristas
-internal/empresa       dados, logo, cor e regras de orçamento da empresa
-internal/auth          senha única, sessões em banco, middleware
-internal/storage       interface Storage + implementação em disco
-internal/imagem        upload, validação, miniatura (com correção EXIF), etapa
-internal/web           handlers, templates, CSS, HTMX
+cmd/api                   composição e subida do servidor HTTP
+cmd/seed                  dados de desenvolvimento
+internal/domain           regras de negócio: um pacote por agregado, ports de repositório
+internal/application      casos de uso (CQRS): commands, queries, dispatcher, ports
+internal/adapters/http    rotas (chi), handlers magros, DTOs, middlewares
+internal/adapters/postgres repositórios, SQL, migrações, transação
+pkg                       ferramentas transversais: erros, validar, httpx, config, logger
+docs                      decisões e planos
+.claude/skills            skills por camada, para manter o padrão
 ```
 
-Arquitetura atual: monólito em camadas por funcionalidade (repositório junto do
-domínio). A reorganização para ports/casos de uso está planejada para depois que
-o domínio estabilizar.
+Guia completo de arquitetura, convenções e regras: [`CLAUDE.md`](CLAUDE.md).
 
 ## Variáveis de ambiente
 
 | Variável | Padrão | Uso |
 |---|---|---|
 | `DATABASE_URL` | — | conexão Postgres (obrigatória) |
-| `SENHA_HASH` | — | hash bcrypt da senha, entre aspas simples (obrigatória) |
 | `HTTP_ADDR` | `:8080` | endereço do servidor |
-| `STORAGE_DIR` | `./dados/uploads` | pasta das imagens |
-| `OS_NUMERO_INICIAL` | `1` | primeiro número emitido pelo sistema (só na primeira sequência) |
-| `UPLOAD_MAX_MB` | `15` | limite por imagem |
+| `CORS_ORIGENS` | `http://localhost:5173` | origens do frontend, separadas por vírgula (API nova) |
 | `SESSAO_DURACAO` | `720h` | validade do login |
-| `COOKIE_SECURE` | `false` | `true` atrás de HTTPS |
-| `DEV` | `false` | recarrega templates do disco |
-
-## Decisões que vale saber
-
-- **Dinheiro em centavos, quantidade em centésimos**, sempre inteiros.
-- **Numeração** por `UPSERT` em `sequencia_documento` dentro da transação de criação;
-  o lock de linha do Postgres resolve a concorrência. Número nunca é reaproveitado.
-- **Optimistic locking** via `ordem_servico.versao`; conflito responde HTTP 409 com aviso.
-- **Expirado é derivado** da validade (`valido_ate`), nunca gravado.
-- **Cliente e serviço são copiados na OS** (vínculo + snapshot): editar o cadastro
-  depois não muda OS antigas.
-- **Dashboard** conta só agendada/em andamento/concluída, por data de emissão;
-  "a receber" e "orçamentos aguardando" são a situação atual, independente do mês.
-- **`empresa_id` em todas as tabelas**, com a empresa 1 fixa por enquanto; as consultas
-  já filtram por ela.
-- **Busca sem acento** (`unaccent`): "joao" encontra "João".
-- **Imagens**: JPEG, PNG e WebP; HEIC (iPhone) não é aceito. Miniatura de 480px com
-  correção de orientação EXIF.
+| `OS_NUMERO_INICIAL` | `1` | primeiro número emitido (só na primeira sequência) |
+| `STORAGE_DIR` | `./dados/uploads` | pasta das imagens |
+| `UPLOAD_MAX_MB` | `15` | limite por imagem |
+| `DEV` | `false` | logs em texto, recarga de templates (legado) |
+| `SENHA_HASH` | — | senha única do legado (some com ele) |
+| `COOKIE_SECURE` | `false` | legado |
+| `TEST_DATABASE_URL` | — | só para `go test` |
