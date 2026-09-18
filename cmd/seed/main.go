@@ -21,15 +21,15 @@ import (
 	"os"
 	"time"
 
-	"github.com/Gustavo-Resende/autoSocorro/internal/cliente"
-	"github.com/Gustavo-Resende/autoSocorro/internal/config"
-	"github.com/Gustavo-Resende/autoSocorro/internal/database"
-	"github.com/Gustavo-Resende/autoSocorro/internal/empresa"
-	"github.com/Gustavo-Resende/autoSocorro/internal/imagem"
-	"github.com/Gustavo-Resende/autoSocorro/internal/motorista"
-	"github.com/Gustavo-Resende/autoSocorro/internal/ordemservico"
-	"github.com/Gustavo-Resende/autoSocorro/internal/servico"
-	"github.com/Gustavo-Resende/autoSocorro/internal/storage"
+	"github.com/Gustavo-Resende/autoReboque/internal/cliente"
+	"github.com/Gustavo-Resende/autoReboque/internal/config"
+	"github.com/Gustavo-Resende/autoReboque/internal/database"
+	"github.com/Gustavo-Resende/autoReboque/internal/empresa"
+	"github.com/Gustavo-Resende/autoReboque/internal/imagem"
+	"github.com/Gustavo-Resende/autoReboque/internal/motorista"
+	"github.com/Gustavo-Resende/autoReboque/internal/ordemservico"
+	"github.com/Gustavo-Resende/autoReboque/internal/servico"
+	"github.com/Gustavo-Resende/autoReboque/internal/storage"
 )
 
 const empresaAtual int64 = 1

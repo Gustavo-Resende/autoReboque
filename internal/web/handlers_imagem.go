@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Gustavo-Resende/autoSocorro/internal/imagem"
-	"github.com/Gustavo-Resende/autoSocorro/internal/ordemservico"
-	"github.com/Gustavo-Resende/autoSocorro/internal/storage"
+	"github.com/Gustavo-Resende/autoReboque/internal/imagem"
+	"github.com/Gustavo-Resende/autoReboque/internal/ordemservico"
+	"github.com/Gustavo-Resende/autoReboque/internal/storage"
 )
 
 func etapasDeFoto() []imagem.Etapa { return imagem.TodasEtapas }

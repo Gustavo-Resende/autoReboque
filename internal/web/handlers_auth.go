@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Gustavo-Resende/autoSocorro/internal/auth"
+	"github.com/Gustavo-Resende/autoReboque/internal/auth"
 )
 
 func (s *Servidor) loginForm(w http.ResponseWriter, r *http.Request) {

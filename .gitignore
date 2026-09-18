@@ -12,6 +12,9 @@ dados/
 .env.*
 !.env.example
 
+# Configuração local do Claude Code (permissões pessoais)
+.claude/settings.local.json
+
 # IDE / SO
 .vscode/
 .idea/

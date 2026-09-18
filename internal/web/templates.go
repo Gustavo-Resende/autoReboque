@@ -15,8 +15,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Gustavo-Resende/autoSocorro/internal/cliente"
-	"github.com/Gustavo-Resende/autoSocorro/internal/ordemservico"
+	"github.com/Gustavo-Resende/autoReboque/internal/cliente"
+	"github.com/Gustavo-Resende/autoReboque/internal/ordemservico"
 )
 
 // Templates e arquivos estáticos vão embutidos no binário. Em modo DEV,

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Gustavo-Resende/autoSocorro/internal/database"
+	"github.com/Gustavo-Resende/autoReboque/internal/database"
 )
 
 // Estes testes precisam de Postgres (TEST_DATABASE_URL). Sem ele, são pulados.

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/Gustavo-Resende/autoSocorro/internal/database"
+	"github.com/Gustavo-Resende/autoReboque/internal/database"
 )
 
 func TestValidar(t *testing.T) {

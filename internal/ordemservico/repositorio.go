@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/Gustavo-Resende/autoSocorro/internal/documento"
+	"github.com/Gustavo-Resende/autoReboque/internal/documento"
 )
 
 var (

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Gustavo-Resende/autoSocorro/internal/ordemservico"
+	"github.com/Gustavo-Resende/autoReboque/internal/ordemservico"
 )
 
 // formOS é o formulário de OS como texto: tudo string, do jeito que veio do

@@ -1,4 +1,4 @@
-module github.com/Gustavo-Resende/autoSocorro
+module github.com/Gustavo-Resende/autoReboque
 
 go 1.27.0
 

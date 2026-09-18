@@ -10,7 +10,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Gustavo-Resende/autoSocorro/internal/auth"
+	"github.com/Gustavo-Resende/autoReboque/internal/auth"
 )
 
 func main() {

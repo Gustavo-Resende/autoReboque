@@ -3,7 +3,7 @@ package web
 import (
 	"net/http"
 
-	"github.com/Gustavo-Resende/autoSocorro/internal/imagem"
+	"github.com/Gustavo-Resende/autoReboque/internal/imagem"
 )
 
 // grupoDeFotos é um bloco de fotos de uma mesma etapa, para a impressão.

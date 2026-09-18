@@ -13,7 +13,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/Gustavo-Resende/autoSocorro/internal/storage"
+	"github.com/Gustavo-Resende/autoReboque/internal/storage"
 )
 
 // CorPadrao é o laranja da Auto Socorro Trevo.

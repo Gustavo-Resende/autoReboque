@@ -2,11 +2,11 @@
 services:
   db:
     image: postgres:17-alpine
-    container_name: autosocorro-db
+    container_name: autoreboque-db
     environment:
-      POSTGRES_USER: autosocorro
-      POSTGRES_PASSWORD: autosocorro
-      POSTGRES_DB: autosocorro
+      POSTGRES_USER: autoreboque
+      POSTGRES_PASSWORD: autoreboque
+      POSTGRES_DB: autoreboque
     ports:
       - "5432:5432"
     volumes:
@@ -14,7 +14,7 @@ services:
       # Scripts em docker-entrypoint-initdb.d rodam só na primeira criação do volume.
       - ./docker/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U autosocorro -d autosocorro"]
+      test: ["CMD-SHELL", "pg_isready -U autoreboque -d autoreboque"]
       interval: 5s
       timeout: 3s
       retries: 10

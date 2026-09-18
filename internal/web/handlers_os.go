@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Gustavo-Resende/autoSocorro/internal/cliente"
-	"github.com/Gustavo-Resende/autoSocorro/internal/ordemservico"
+	"github.com/Gustavo-Resende/autoReboque/internal/cliente"
+	"github.com/Gustavo-Resende/autoReboque/internal/ordemservico"
 )
 
 // ---------------------------------------------------------------------------

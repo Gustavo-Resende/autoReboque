@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Gustavo-Resende/autoSocorro/internal/motorista"
-	"github.com/Gustavo-Resende/autoSocorro/internal/ordemservico"
-	"github.com/Gustavo-Resende/autoSocorro/internal/servico"
+	"github.com/Gustavo-Resende/autoReboque/internal/motorista"
+	"github.com/Gustavo-Resende/autoReboque/internal/ordemservico"
+	"github.com/Gustavo-Resende/autoReboque/internal/servico"
 )
 
 // ---------------------------------------------------------------------------

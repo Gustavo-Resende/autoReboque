@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Gustavo-Resende/autoSocorro/internal/empresa"
-	"github.com/Gustavo-Resende/autoSocorro/internal/imagem"
-	"github.com/Gustavo-Resende/autoSocorro/internal/storage"
+	"github.com/Gustavo-Resende/autoReboque/internal/empresa"
+	"github.com/Gustavo-Resende/autoReboque/internal/imagem"
+	"github.com/Gustavo-Resende/autoReboque/internal/storage"
 )
 
 func (s *Servidor) empresaForm(w http.ResponseWriter, r *http.Request) {
